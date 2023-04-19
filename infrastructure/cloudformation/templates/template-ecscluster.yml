@@ -1,0 +1,146 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ->
+  AWS Cloudformation Template to create ECS Cluster.
+Parameters:
+  # ECS Cluster
+  ECSClusterCapacityProviders:
+    Type: String
+    Default: FARGATE
+    Description: List of comma separated capacity providers for ECS Cluster.
+    AllowedValues:
+      - FARGATE
+      - FARGATE_SPOT
+  ECSClusterClusterName:
+    Type: String
+    Default: AWSECSCluster
+    Description: A user-generated string that you use to identify your cluster. If you don't specify a name, AWS CloudFormation generates a unique physical ID for the name.
+  ECSClusterKmsKeyId:
+    Type: String
+    Default: ''
+    Description: Specifies the ARN of the AWS Kms Cmk used to encrypt log group and performance insight data.
+  
+  # KMS Key
+  KMSKeyDescription:
+    Type: String
+    Default: AWS KMS Key
+    Description: A description of the KMS key. Use a description that helps you to distinguish this KMS key from others in the account, such as its intended use.
+  KMSKeyEnabled:
+    Type: Boolean
+    Default: true
+    Description: Specifies whether the KMS key is enabled. Disabled KMS keys cannot be used in cryptographic operations.
+    AllowedValues:
+      - true
+      - false
+  KMSKeyEnableRotation:
+    Type: Boolean
+    Default: true
+    Description: Enables automatic rotation of the key material for the specified KMS key. By default, automatic key rotation is not enabled.
+    AllowedValues:
+      - true
+      - false
+  KMSKeyKeyPolicy:
+    Type: String
+    Default: ''
+    Description: The key policy that authorizes use of the KMS key.
+  KMSKeyKeySpec:
+    Type: String
+    Default: SYMMETRIC_DEFAULT
+    Description: Specifies the type of KMS key to create. The default value, SYMMETRIC_DEFAULT
+    AllowedValues:
+      - SYMMETRIC_DEFAULT
+      - ECC_NIST_P256
+      - ECC_NIST_P384
+      - ECC_NIST_P521
+      - ECC_SECG_P256K1
+      - HMAC_224
+      - HMAC_256
+      - HMAC_384
+      - HMAC_512
+      - RSA_2048
+      - RSA_3072
+      - RSA_4096
+      - SM2
+  KMSKeyKeyUsage:
+    Type: String
+    Default: ENCRYPT_DECRYPT
+    Description: Determines the cryptographic operations for which you can use the KMS key. The default value is ENCRYPT_DECRYPT.
+    AllowedValues:
+      - ENCRYPT_DECRYPT
+      - GENERATE_VERIFY_MAC
+      - SIGN_VERIFY
+  KMSKeyMultiRegion:
+    Type: Boolean
+    Default: false
+    Description: Creates a multi-Region primary key that you can replicate in other AWS Regions. You can't change the MultiRegion value after the KMS key is created.
+    AllowedValues:
+      - true
+      - false
+  KMSKeyPendingWindowInDays:
+    Type: Integer
+    Default: 7
+    MinValue: 7
+    MaxValue: 30
+    Description: Specifies the number of days in the waiting period before AWS KMS deletes a KMS key that has been removed from a CloudFormation stack. Enter a value between 7 and 30 days. The default value is 30 days.
+
+  # KMS Key Alias
+  KMSKeyAliasName:
+    Type: String
+    Default: alias/aws-kms-cmk
+    AllowedPattern: ^alias/[a-zA-Z0-9/_-]+$
+    Description: Specifies the alias name. This value must begin with alias/ followed by a name, such as alias/ExampleAlias.
+
+  AWSLogsLogGroupRetentionInDays:
+    Type: Number
+    Default: 60
+    Description: The number of days to retain the log events in the specified log group.
+    AllowedValues:
+      - 60
+      - 90
+      - 120
+      - 150
+      - 180
+      - 365
+
+Conditions:
+  CreateKmsKey: !Equals [ !Ref ECSClusterKmsKeyId, '' ]
+
+Resources:
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    DependeOn: ECSClusterContainerInsightsLogGroup
+    Properties:
+      CapacityProviders:
+        - !Ref ECSClusterCapacityProviders
+      ClusterName: !Ref ECSClusterClusterName
+      ClusterSettings: 
+        - Name: containerInsights
+          Value: 	enabled
+      
+  ECSClusterContainerInsightsLogGroup:
+    Type: AWS::Log::LogGroup
+    Properties:
+      KmsKeyId: !If [ CreateKmsKey, !GetAtt ECSClusterKmsKey.Outputs.KmsKeyArn, !Ref ECSClusterKmsKeyId ]
+      LogGroupName: !Sub /aws/ecs/containerinsights/${ECSClusterClusterName}/performance
+      RetentionInDays: !Ref AWSLogsLogGroupRetentionInDays
+
+  ECSClusterKmsKey:
+    Type: AWS::Cloudformation::Stack
+    Condition: CreateKmsKey
+    Properties:
+      KMSKeyDescription: !Ref KMSKeyDescription
+      KMSKeyEnabled: !Ref KMSKeyEnabled
+      KMSKeyEnableRotation: !Ref KMSKeyEnableRotation
+      KMSKeyKeyPolicy: !Ref KMSKeyKeyPolicy
+      KMSKeyKeySpec: !Ref KMSKeyKeySpec
+      KMSKeyKeyUsage: !Ref KMSKeyKeyUsage
+      KMSKeyMultiRegion: !Ref KMSKeyMultiRegion
+      KMSKeyPendingWindowInDays: !Ref KMSKeyPendingWindowInDays
+      KMSKeyAliasName: !Ref KMSKeyAliasName
+    TemplateURL: https://air-cf-templates.s3.amazonaws.com/template-kms.yml
+
+Outputs:
+  ECSClusterArn:
+    Description: ECS Cluster Arn
+    Value: !GetAtt ECSCluster.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-ECSClusterArn"
