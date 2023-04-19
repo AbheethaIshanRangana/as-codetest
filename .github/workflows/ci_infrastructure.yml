@@ -1,0 +1,29 @@
+name: Infrastructure CI 
+
+on: 
+  workflow_dispatch:
+    inputs:
+      directory:
+        description: "Set repo directory"
+        required: true
+        default: 'application'
+        type: choice
+        options:
+          - application
+          - infrastructure
+  push:
+    branches:
+      - develop
+      - main
+    paths:
+      - 'infrastructure/**'
+      - '!infrastructure/README.md'
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open Issue
+        run: |
+          echo "CI Infrastructure"
