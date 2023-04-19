@@ -1,6 +1,13 @@
 name: Application CI 
 
 on: 
+  push:
+    branches:
+      - dev
+      - main
+    paths:
+      - 'application/**'
+      - '!application/README.md'
   workflow_dispatch:
     inputs:
       directory:
@@ -11,13 +18,6 @@ on:
         options:
           - application
           - infrastructure
-  push:
-    branches:
-      - develop
-      - main
-    paths:
-      - 'application/**'
-      - '!application/README.md'
 
 jobs:
 
