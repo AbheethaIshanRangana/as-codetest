@@ -1,0 +1,13 @@
+{
+    "Parameters": {
+        "KMSKeyDescription": "AWS Kms Cmk Key",
+        "KMSKeyEnabled": "true",
+        "KMSKeyEnableRotation": "true",
+        "KMSKeyKeyPolicy": "",
+        "KMSKeyKeySpec": "SYMMETRIC_DEFAULT",
+        "KMSKeyKeyUsage": "ENCRYPT_DECRYPT",
+        "KMSKeyMultiRegion": "false",
+        "KMSKeyPendingWindowInDays": "7",
+        "KMSKeyAliasName": "alias/aws-kms-cmk-key"
+    }
+}
