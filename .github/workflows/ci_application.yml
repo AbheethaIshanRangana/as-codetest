@@ -21,7 +21,46 @@ on:
 
 jobs:
 
-  build:
+  Application-Unit-Testing:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Check Python version 
+        run: |
+          python3 --version
+          pip --version
+      - name: Execute test case 
+        run: |
+          pip install -r $GITHUB_WORKSPACE/application/requirements.txt
+          python3 $GITHUB_WORKSPACE/application/test_app.py
+
+  Python-Static-Analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Check Python version 
+        run: |
+          python3 --version
+          pip --version
+      - name: Pylint 
+        run: |
+          python3 -m pip install pylint
+          pylint $GITHUB_WORKSPACE/application/*.py
+        continue-on-error: true
+      - name: Prospector
+        run: | 
+          python3 -m pip install prospector
+          cd $GITHUB_WORKSPACE/application/ && prospector
+        continue-on-error: true
+      - name: Bandit 
+        run: |
+          python3 -m pip install bandit
+          cd $GITHUB_WORKSPACE/application/ && bandit -r .
+        continue-on-error: true
+
+  Build:
     runs-on: ubuntu-latest
     steps:
       - name: Open Issue
