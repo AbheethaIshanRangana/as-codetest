@@ -23,7 +23,6 @@ jobs:
 
   Python-Static-Analysis:
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -35,9 +34,11 @@ jobs:
         run: |
           sudo apt install pylint 
           pylint application/*.py
+        continue-on-error: true
       - name: Prospector
         run: | 
-          echo "Prospector"
+          python -m pip install prospector
+          cd application/ && prospector
 
 
   Build:
