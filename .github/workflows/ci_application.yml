@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Check Python version 
         run: |
           python3 --version
@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Check Python version 
         run: |
           python3 --version
@@ -60,9 +60,15 @@ jobs:
           cd $GITHUB_WORKSPACE/application/ && bandit -r .
         continue-on-error: true
 
-  Build:
+  Docker:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Dockerfile Lint(Hadolint)
+        uses: hadolint/hadolint-action@v3.1.0
+        with: 
+          dockerfile: $GITHUB_WORKSPACE/application/Dockerfile
       - name: Open Issue
         run: |
           echo "CI Application"
