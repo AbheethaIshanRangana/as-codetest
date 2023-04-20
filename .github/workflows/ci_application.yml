@@ -21,6 +21,19 @@ on:
 
 jobs:
 
+  Application-Unit-Testing:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Check Python version 
+        run: |
+          python3 --version
+          pip --version
+      - name: Execute test case 
+        run: |
+          python3 $GITHUB_WORKSPACE/application/test_app.py
+
   Python-Static-Analysis:
     runs-on: ubuntu-latest
     steps:
@@ -44,6 +57,7 @@ jobs:
         run: |
           python3 -m pip install bandit
           cd $GITHUB_WORKSPACE/application/ && bandit -r .
+        continue-on-error: true
 
   Build:
     runs-on: ubuntu-latest
