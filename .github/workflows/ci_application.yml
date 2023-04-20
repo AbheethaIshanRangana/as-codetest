@@ -71,6 +71,6 @@ jobs:
           dockerfile: application/Dockerfile
       - name: Scan docker image
         run: |
-          sudo apt-get update && apt-get install docker-scan-plugin -y
+          sudo apt-get update && sudo apt-get install docker-scan-plugin -y
           docker scan --accept-license --version
           docker scan --file application/Dockerfile docker-scan:e2e
