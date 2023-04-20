@@ -21,5 +21,18 @@ class TestFlaskApp(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, b'Healthy...!!!')
 
+    def test_invalid_url(self):
+        response = self.app.get('/invalid_url')
+        self.assertEqual(response.status_code, 404)
+
+    def test_post_request(self):
+        response = self.app.post('/post_request')
+        self.assertEqual(response.status_code, 405)
+
+    def test_redirect(self):
+        response = self.app.get('/redirect')
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.headers['Location'], url_for('health', _external=True))
+
 if __name__ == '__main__':
     unittest.main()
