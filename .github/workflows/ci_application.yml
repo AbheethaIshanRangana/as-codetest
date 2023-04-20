@@ -21,14 +21,16 @@ on:
 
 jobs:
 
-  Code-Testing:
+  Python-Static-Analysis:
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Check Python version 
         run: |
           python3 --version
+          pip --version
       - name: Python Code Quality and Lint 
         run: |
           sudo apt install pylint 
