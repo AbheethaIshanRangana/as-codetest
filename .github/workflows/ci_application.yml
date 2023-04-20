@@ -82,13 +82,18 @@ jobs:
       #    sudo chmod +x /usr/local/bin/snyk
       #    snyk auth $SNYK_TOKEN
       #    snyk test --docker flaskapp1:$GITHUB_SHA --file=application/Dockerfile
-      - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/python@master
+      - name: Build a Docker image
+        run: | 
+          cd application/ 
+          docker build -t flaskapp:latest .
+      - name: Run Snyk to check Docker image for vulnerabilities
         continue-on-error: true
+        uses: snyk/actions/docker@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --sarif-file-output=snyk.sarif
+          image: flaskapp:latest
+          args: --file=Dockerfile
       - name: Upload result to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v2
         with:
