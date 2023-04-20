@@ -71,6 +71,6 @@ jobs:
           dockerfile: application/Dockerfile
       - name: Scan docker image
         run: |
-          sudo apt-get update && sudo apt-get install docker-scan-plugin -y
-          docker scan --accept-license --version
-          docker scan --file application/Dockerfile docker-scan:e2e
+          wget -O /usr/local/bin/snyk https://static.snyk.io/cli/latest/snyk-linux
+          sudo chmod +x /usr/local/bin/snyk
+          snyk test --docker flaskapp1:$GITHUB_SHA --file=application/Dockerfile --snyk-token=${{ secrets.SNYK_TOKEN }}
