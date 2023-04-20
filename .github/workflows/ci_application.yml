@@ -32,6 +32,7 @@ jobs:
           pip --version
       - name: Execute test case 
         run: |
+          pip install -r $GITHUB_WORKSPACE/application/requirements.txt
           python3 $GITHUB_WORKSPACE/application/test_app.py
 
   Python-Static-Analysis:
