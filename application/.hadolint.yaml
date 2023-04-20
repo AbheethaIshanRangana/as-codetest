@@ -1,4 +1,3 @@
-failure-threshold: error                # name of threshold level (error | warning | info | style | ignore | none)
 format: json                            # Output format (tty | json | checkstyle | codeclimate | gitlab_codeclimate | gnu | codacy)
 ignored: [DL3018]                       # list of rules
 label-schema:                           # See Linting Labels below for specific label-schema details
