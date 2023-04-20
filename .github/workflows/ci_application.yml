@@ -69,6 +69,8 @@ jobs:
         uses: hadolint/hadolint-action@v3.1.0
         with: 
           dockerfile: application/Dockerfile
-      - name: Open Issue
+      - name: Scan docker image
         run: |
-          echo "CI Application"
+          sudo apt-get update && apt-get install docker-scan-plugin -y
+          docker scan --accept-license --version
+          docker scan --file application/Dockerfile docker-scan:e2e
