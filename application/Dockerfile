@@ -1,6 +1,6 @@
 FROM alpine:3.17.3
 LABEL maintainer="d.m.abheethaishan@gmail.com"
-RUN apk add --no-cache python3=3.10.6 py3-pip=22.0.2
+RUN apk add --no-cache python3 py3-pip
 WORKDIR /app
 COPY requirements.txt requirements.txt
 COPY *.py .
