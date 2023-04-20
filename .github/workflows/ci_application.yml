@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Python Code Quality and Lint 
         run: |
-          apt install pylint 
+          sudo apt install pylint 
           pylint application/*.py
 
   build:
