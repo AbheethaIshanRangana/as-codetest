@@ -68,7 +68,7 @@ jobs:
       - name: Dockerfile Lint(Hadolint)
         uses: hadolint/hadolint-action@v3.1.0
         with: 
-          dockerfile: $GITHUB_WORKSPACE/application/Dockerfile
+          dockerfile: application/Dockerfile
       - name: Open Issue
         run: |
           echo "CI Application"
