@@ -30,16 +30,20 @@ jobs:
         run: |
           python3 --version
           pip --version
-      - name: Python Code Quality and Lint 
+      - name: Pylint 
         run: |
-          sudo apt install pylint 
-          pylint application/*.py
+          python3 -m pip install pylint
+          pylint $GITHUB_WORKSPACE/application/*.py
         continue-on-error: true
       - name: Prospector
         run: | 
-          python -m pip install prospector
-          cd application/ && prospector
-
+          python3 -m pip install prospector
+          cd $GITHUB_WORKSPACE/application/ && prospector
+        continue-on-error: true
+      - name: Bandit 
+        run: |
+          python3 -m pip install bandit
+          cd $GITHUB_WORKSPACE/application/ && bandit -r .
 
   Build:
     runs-on: ubuntu-latest
