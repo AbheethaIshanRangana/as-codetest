@@ -83,9 +83,17 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: '3.10'
-      - name: Set image tag
-        id: set-tag
-        run: echo "::set-output name=tag::${{ github.sha }}"
+      #- name: Set image tag
+      #  id: set-tag
+      #  run: echo "::set-output name=tag::${{ github.sha }}"
+
+      - name: Generate image tag
+        id: set-tag 
+        run: |
+          sha=${GITHUB_SHA::8}
+          ts=$(date +%s)
+          echo "::setOutput name=IMAGE_ID::${sha}-${ts}"
+
       - name: Dockerfile Lint(Hadolint)
         uses: hadolint/hadolint-action@v3.1.0
         with: 
@@ -110,7 +118,7 @@ jobs:
           context: $GITHUB_WORKSPACE/application/
           push: true
           #tags: ${{ env.DOCKER_USERNAME }}/$DOCKER_IMAGE_NAME:${{ steps.git_commit_hash.outputs.hash }}
-          tags: ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.set-tag.outputs.tag }}
+          tags: ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.set-tag.outputs.IMAGE_ID }}
         env:
           DOCKER_USERNAME: ${{ env.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
@@ -118,4 +126,4 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-          docker push $DOCKER_USERNAME/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.set-tag.outputs.tag }}
+          docker push $DOCKER_USERNAME/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.set-tag.outputs.IMAGE_ID }}
