@@ -1,9 +1,9 @@
-FROM alpine:latest
+FROM alpine:3.17.3
 LABEL maintainer="d.m.abheethaishan@gmail.com"
 RUN apk add --no-cache python3 py3-pip
 WORKDIR /app
 COPY requirements.txt requirements.txt
-COPY *.py .
+COPY *.py /app/
 RUN pip3 --no-cache-dir install -r requirements.txt
 EXPOSE 8080
 ENTRYPOINT ["python3"]
