@@ -87,4 +87,10 @@ jobs:
         with:
           image: flaskapp:latest
           args: --file=$GITHUB_WORKSPACE/application/Dockerfile
-      
+      - name: Run Snyk to check python code vulnerabilities
+        continue-on-error: true
+        uses: snyk/actions/python@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: monitor
