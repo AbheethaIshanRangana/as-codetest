@@ -75,14 +75,6 @@ jobs:
         with: 
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      #- name: Scan docker image
-      #  env:
-      #    SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      #  run: |
-      #    wget -O /usr/local/bin/snyk https://static.snyk.io/cli/latest/snyk-linux
-      #    sudo chmod +x /usr/local/bin/snyk
-      #    snyk auth $SNYK_TOKEN
-      #    snyk test --docker flaskapp1:$GITHUB_SHA --file=application/Dockerfile
       - name: Build a Docker image
         run: | 
           cd application/ 
@@ -95,7 +87,4 @@ jobs:
         with:
           image: flaskapp:latest
           args: --file=$GITHUB_WORKSPACE/application/Dockerfile
-      - name: Upload result to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v2
-        with:
-          sarif_file: snyk.sarif
+      
