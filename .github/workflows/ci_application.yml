@@ -87,4 +87,3 @@ jobs:
         with:
           image: flaskapp:latest
           args: --file=$GITHUB_WORKSPACE/application/Dockerfile
-      
