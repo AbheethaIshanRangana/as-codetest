@@ -136,8 +136,8 @@ jobs:
       - name: Push Docker image to DockerHub
         #if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-          docker push $DOCKER_USERNAME/${{ env.DOCKER_IMAGE_NAME }}:${{ env.IMAGE_ID }}
+          docker login -u ${{ env.DOCKER_USERNAME }} -p ${{ env.DOCKER_PASSWORD}}
+          docker push ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.IMAGE_ID }}
 
   Application-Deployment:
     name: Application Deployment 
@@ -151,6 +151,8 @@ jobs:
           echo "Application Deployment"
       - uses: trstringer/manual-approval@v1
         with:
-          secret: ${{ github.TOKEN }}
+          secret: ${{ env.TOKEN }}
           approvers: AbheethaIshanRangana
           #approvers: trstringer,acdunnigan
+        env:
+          TOKEN: ${{ secrets.GH_TOKEN }}
