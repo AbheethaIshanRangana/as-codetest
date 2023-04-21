@@ -23,6 +23,9 @@ on:
           - application
           - infrastructure
 
+env:
+  DOCKER_IMAGE_NAME: "flaskapp"  
+
 jobs:
 
   Application-Unit-Testing:
@@ -92,7 +95,7 @@ jobs:
       - name: Build a Docker image for Snyk testing
         run: | 
           cd application/ 
-          docker build -t $DOCKER_IMAGE_NAME:latest .
+          docker build -t ${{ env.DOCKER_IMAGE_NAME }}:latest .
       - name: Run Snyk to check Docker image for vulnerabilities
         continue-on-error: true
         uses: snyk/actions/docker@master
@@ -112,7 +115,6 @@ jobs:
     env: 
       DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}
-      DOCKER_IMAGE_NAME: "flaskapp"
     steps:
       - name: Checkout
         uses: actions/checkout@v3
