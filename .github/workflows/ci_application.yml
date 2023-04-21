@@ -78,8 +78,8 @@ jobs:
       DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}
       DOCKER_IMAGE_NAME: "flaskapp"
-    outputs:
-      image-tag: ${{ steps.set-tag.outputs.IMAGE_ID }}
+    #outputs:
+    #  image-tag: ${{ steps.set-tag.outputs.IMAGE_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -92,7 +92,7 @@ jobs:
         run: |
           sha=${GITHUB_SHA::8}
           ts=$(date +%s)
-          echo "IMAGE_ID=${sha}-${ts}" >> $GITHUB_OUTPUT
+          echo "IMAGE_ID=${sha}-${ts}" >> $GITHUB_ENV
       - name: Dockerfile Lint(Hadolint)
         uses: hadolint/hadolint-action@v3.1.0
         with: 
@@ -122,9 +122,11 @@ jobs:
           context: $GITHUB_WORKSPACE/application/
           push: true
           #tags: ${{ env.DOCKER_USERNAME }}/$DOCKER_IMAGE_NAME:${{ steps.git_commit_hash.outputs.hash }}
-          tags: ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.set-tag.outputs.image-tag }}
+          #tags: ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.set-tag.outputs.image-tag }}
+          tags: ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.IMAGE_ID }}
       - name: Push Docker image to DockerHub
       #  if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-          docker push $DOCKER_USERNAME/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.set-tag.outputs.image-tag }}
+          #docker push $DOCKER_USERNAME/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.set-tag.outputs.image-tag }}
+          docker push $DOCKER_USERNAME/${{ env.DOCKER_IMAGE_NAME }}:${{ env.IMAGE_ID }}
