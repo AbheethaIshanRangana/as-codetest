@@ -129,12 +129,10 @@ jobs:
           sha=${GITHUB_SHA::8}
           echo "IMAGE_ID=${sha}" >> $GITHUB_ENV
       - name: Build Docker image to deploy
-        #if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           cd $GITHUB_WORKSPACE/application/
           docker build -t ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.IMAGE_ID }} .
       - name: Push Docker image to DockerHub
-        #if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           docker login -u ${{ env.DOCKER_USERNAME }} -p ${{ env.DOCKER_PASSWORD}}
           docker push ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.IMAGE_ID }}
@@ -149,10 +147,10 @@ jobs:
       - name: Deployment 
         run: |
           echo "Application Deployment"
-      - uses: trstringer/manual-approval@v1
+      - name: Deployment Approval
+        uses: trstringer/manual-approval@v1
         with:
           secret: ${{ env.TOKEN }}
           approvers: AbheethaIshanRangana
-          #approvers: trstringer,acdunnigan
         env:
           TOKEN: ${{ secrets.GH_TOKEN }}
