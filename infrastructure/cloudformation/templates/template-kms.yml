@@ -8,14 +8,14 @@ Parameters:
     Default: AWS KMS Key
     Description: A description of the KMS key. Use a description that helps you to distinguish this KMS key from others in the account, such as its intended use.
   KMSKeyEnabled:
-    Type: Boolean
+    Type: String
     Default: true
     Description: Specifies whether the KMS key is enabled. Disabled KMS keys cannot be used in cryptographic operations.
     AllowedValues:
       - true
       - false
   KMSKeyEnableRotation:
-    Type: Boolean
+    Type: String
     Default: true
     Description: Enables automatic rotation of the key material for the specified KMS key. By default, automatic key rotation is not enabled.
     AllowedValues:
@@ -52,14 +52,14 @@ Parameters:
       - GENERATE_VERIFY_MAC
       - SIGN_VERIFY
   KMSKeyMultiRegion:
-    Type: Boolean
+    Type: String
     Default: false
     Description: Creates a multi-Region primary key that you can replicate in other AWS Regions. You can't change the MultiRegion value after the KMS key is created.
     AllowedValues:
       - true
       - false
   KMSKeyPendingWindowInDays:
-    Type: Integer
+    Type: Number
     Default: 7
     MinValue: 7
     MaxValue: 30
@@ -79,8 +79,6 @@ Conditions:
 Resources:
   KmsKey:
     Type: AWS::KMS::Key
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
     Properties:
       Description: !Ref KMSKeyDescription
       Enabled: !Ref KMSKeyEnabled
@@ -130,6 +128,21 @@ Resources:
                 - 'kms:GenerateDataKey'
                 - 'kms:GenerateDataKeyWithoutPlaintext'
               Resource: '*'
+            - Sid: Log Group Access 
+              Effect: Allow 
+              Principal:
+                Service: !Sub logs.${AWS::Region}.amazonaws.com
+              Action:
+                - kms:Encrypt*
+                - kms:Decrypt*
+                - kms:ReEncrypt*
+                - kms:GenerateDataKey*
+                - kms:Describe*
+              Resource: "*"
+              Condition:
+                ArnEquals:
+                  kms:EncryptionContext:aws:logs:arn: 
+                    - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*
       KeySpec: !Ref KMSKeyKeySpec
       KeyUsage: !Ref KMSKeyKeyUsage
       MultiRegion: !Ref KMSKeyMultiRegion
@@ -137,8 +150,6 @@ Resources:
 
   KmsKeyAlias:
     Type: AWS::KMS::Alias
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
     Properties:
       AliasName:  !Ref KMSKeyAliasName
       TargetKeyId: !Ref KmsKey
