@@ -48,8 +48,9 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: ${{ env.AWS_CF_IAM_ASSUME_ROLE }}
-          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          #role-to-assume: ${{ env.AWS_CF_IAM_ASSUME_ROLE }}
+          role-to-assume: arn:aws:iam::846245987735:role/cf-iam-role
+          aws-region: us-east-1
       - name: Deploy infrastrcture
         uses: aws-actions/aws-cloudformation-github-deploy@v1
         with:
