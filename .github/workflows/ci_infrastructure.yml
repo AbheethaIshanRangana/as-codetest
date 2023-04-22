@@ -39,9 +39,3 @@ jobs:
       - name: awscli version
         run: |
           aws --version
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Open Issue
-        run: |
-          echo "CI Infrastructure"
