@@ -25,17 +25,34 @@ on:
 
 jobs:
 
-  CloudFormation-Template-Validation:
-    name: CloudFormation Template Validation
+  CF-Template-Validation:
+    name: CF Template Validation
     runs-on: ubuntu-latest 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      #- name: Install awscli
-      #  run: |
-      #    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-      #    unzip awscliv2.zip
-      #    sudo ./aws/install -i /usr/local/aws-cli -b /usr/local/bin
       - name: awscli version
         run: |
           aws --version
+  
+
+  Deploy-CF-Stack
+    name: Deploy CF Stack 
+    runs-on: ubuntu-latest
+    env:
+      AWS_CF_IAM_ASSUME_ROLE: ${{ secrets.AWS_CF_ASSUME_ROLE }}
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ env.AWS_CF_IAM_ASSUME_ROLE }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+      - name: Deploy infrastrcture
+        uses: aws-actions/aws-cloudformation-github-deploy@v1
+        with:
+          name: flaskapp
+          template: $GITHUB_WORKSPACE/infrastructure/cloudformation/templates/base-resources.yml
+          parameter-overrides: "file:///${{ github.workspace }}/parameters.json"
