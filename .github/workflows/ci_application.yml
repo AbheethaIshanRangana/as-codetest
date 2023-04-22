@@ -95,7 +95,7 @@ jobs:
       - name: Build a Docker image for Snyk testing
         run: | 
           cd application/ 
-          docker build -t ${{ env.DOCKER_IMAGE_NAME }}:latest . --platform linux/arm64
+          docker build -t ${{ env.DOCKER_IMAGE_NAME }}:latest .
       - name: Run Snyk to check Docker image for vulnerabilities
         continue-on-error: true
         uses: snyk/actions/docker@master
@@ -131,7 +131,7 @@ jobs:
       - name: Build Docker image to deploy
         run: |
           cd $GITHUB_WORKSPACE/application/
-          docker build -t ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.IMAGE_ID }} . --platform linux/arm64
+          docker build -t ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.IMAGE_ID }} . 
       - name: Push Docker image to DockerHub
         run: |
           docker login -u ${{ env.DOCKER_USERNAME }} -p ${{ env.DOCKER_PASSWORD}}
