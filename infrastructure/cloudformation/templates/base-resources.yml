@@ -1,0 +1,551 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS CloudFormation template to create a new ECS Fargate First Run stack
+Parameters:
+  EcsAmiId:
+    Type: String
+    Default: ""
+    Description: ECS AMI Id
+  EcsInstanceType:
+    Type: String
+    Description: ECS EC2 instance type
+    Default: t2.micro
+    ConstraintDescription: must be a valid EC2 instance type.
+  KeyName:
+    Type: String
+    Description: Optional - Name of an existing EC2 KeyPair to enable SSH access to the ECS instances
+    Default: ''
+  AsgMaxSize:
+    Type: Number
+    Description: Maximum size and initial Desired Capacity of ECS Auto Scaling Group
+    Default: '1'
+  IamRoleInstanceProfile:
+    Type: String
+    Default: ""
+    Description: Name or the Amazon Resource Name (ARN) of the instance profile associated with the IAM role for the instance
+  EcsClusterName:
+    Type: String
+    Description: ECS Cluster Name
+    Default: default
+  EcsPort:
+    Type: String
+    Description: Optional - Security Group port to open on ECS instances - defaults to port 80
+    Default: '80'
+  ElbPort:
+    Type: String
+    Description: Optional - Security Group port to open on ELB - port 80 will be open by default
+    Default: '80'
+  ElbHealthCheckTarget:
+    Type: String
+    Description: Optional - Health Check Target for ELB - defaults to HTTP:80/
+    Default: HTTP:80/
+  TargetGroupName:
+    Type: String
+    Description: The target group name
+    Default: ECSFirstRunTargetGroup
+  SourceCidr:
+    Type: String
+    Description: Optional - CIDR/IP range for EcsPort and ElbPort - defaults to 0.0.0.0/0
+    Default: 0.0.0.0/0
+  EcsEndpoint:
+    Type: String
+    Description: 'Optional - ECS Endpoint for the ECS Agent to connect to'
+    Default: ''
+  CreateElasticLoadBalancer:
+    Type: String
+    Description: 'Optional - When set to true, creates a ELB for ECS Service'
+    Default: 'false'
+  VpcAvailabilityZones:
+    Type: CommaDelimitedList
+    Description: 'Optional - Comma-delimited list of two VPC availability zones in which to create subnets'
+    Default: ''
+  VpcCidrBlock:
+    Type: String
+    Description: Optional - CIDR/IP range for the VPC
+    Default: 10.0.0.0/16
+  PublicSubnetCidrBlock1:
+    Type: String
+    Description: Optional - CIDR/IP range for the VPC
+    Default: 10.0.0.0/24
+  PublicSubnetCidrBlock2:
+    Type: String
+    Description: Optional - CIDR/IP range for the VPC
+    Default: 10.0.1.0/24
+  PrivateSubnetCidrBlock1:
+    Type: String
+    Description: Optional - CIDR/IP range for the VPC
+    Default: 10.0.2.0/24
+  PrivateSubnetCidrBlock2:
+    Type: String
+    Description: Optional - CIDR/IP range for the VPC
+    Default: 10.0.3.0/24
+  IsFargate:
+    Type: String
+    Description: Optional - Whether to launch instances and create auto scaling group.
+    Default: 'true'
+  TargetType:
+    Type: String
+    Description: Optional - the ALB target group target type, defaults to ip
+    Default: 'ip'
+
+  # KMS Key Parameters
+  KMSKeyDescription:
+    Type: String
+    Default: AWS KMS Key
+    Description: A description of the KMS key. Use a description that helps you to distinguish this KMS key from others in the account, such as its intended use.
+  KMSKeyEnabled:
+    Type: String
+    Default: true
+    Description: Specifies whether the KMS key is enabled. Disabled KMS keys cannot be used in cryptographic operations.
+    AllowedValues:
+      - true
+      - false
+  KMSKeyEnableRotation:
+    Type: String
+    Default: true
+    Description: Enables automatic rotation of the key material for the specified KMS key. By default, automatic key rotation is not enabled.
+    AllowedValues:
+      - true
+      - false
+  KMSKeyKeyPolicy:
+    Type: String
+    Default: ''
+    Description: The key policy that authorizes use of the KMS key.
+  KMSKeyKeySpec:
+    Type: String
+    Default: SYMMETRIC_DEFAULT
+    Description: Specifies the type of KMS key to create. The default value, SYMMETRIC_DEFAULT
+    AllowedValues:
+      - SYMMETRIC_DEFAULT
+      - ECC_NIST_P256
+      - ECC_NIST_P384
+      - ECC_NIST_P521
+      - ECC_SECG_P256K1
+      - HMAC_224
+      - HMAC_256
+      - HMAC_384
+      - HMAC_512
+      - RSA_2048
+      - RSA_3072
+      - RSA_4096
+      - SM2
+  KMSKeyKeyUsage:
+    Type: String
+    Default: ENCRYPT_DECRYPT
+    Description: Determines the cryptographic operations for which you can use the KMS key. The default value is ENCRYPT_DECRYPT.
+    AllowedValues:
+      - ENCRYPT_DECRYPT
+      - GENERATE_VERIFY_MAC
+      - SIGN_VERIFY
+  KMSKeyMultiRegion:
+    Type: String
+    Default: false
+    Description: Creates a multi-Region primary key that you can replicate in other AWS Regions. You can't change the MultiRegion value after the KMS key is created.
+    AllowedValues:
+      - true
+      - false
+  KMSKeyPendingWindowInDays:
+    Type: Number
+    Default: 7
+    MinValue: 7
+    MaxValue: 30
+    Description: Specifies the number of days in the waiting period before AWS KMS deletes a KMS key that has been removed from a CloudFormation stack. Enter a value between 7 and 30 days. The default value is 30 days.
+
+  # KMS Key Alias
+  KMSKeyAliasName:
+    Type: String
+    Default: alias/aws-kms-cmk
+    AllowedPattern: ^alias/[a-zA-Z0-9/_-]+$
+    Description: Specifies the alias name. This value must begin with alias/ followed by a name, such as alias/ExampleAlias.
+
+  # ECS Cluster Parameters
+  ECSClusterCapacityProviders:
+    Type: String
+    Default: FARGATE
+    Description: List of comma separated capacity providers for ECS Cluster.
+    AllowedValues:
+      - FARGATE
+      - FARGATE_SPOT
+  #ECSClusterClusterName:
+  #  Type: String
+  #  Default: AWSECSCluster
+  #  Description: A user-generated string that you use to identify your cluster. If you don't specify a name, AWS CloudFormation generates a unique physical ID for the name.
+  ECSClusterKmsKeyId:
+    Type: String
+    Default: ''
+    Description: Specifies the ARN of the AWS Kms Cmk used to encrypt log group and performance insight data.
+  AWSLogsLogGroupRetentionInDays:
+    Type: Number
+    Default: 60
+    Description: The number of days to retain the log events in the specified log group.
+    AllowedValues:
+      - 60
+      - 90
+      - 120
+      - 150
+      - 180
+      - 365
+
+Conditions:
+  SetEndpointToECSAgent: !Not [!Equals [!Ref 'EcsEndpoint', '']]
+  CreateELB: !Equals [!Ref 'CreateElasticLoadBalancer', 'true']
+  CreateEC2LCWithKeyPair: !Not [!Equals [!Ref 'KeyName', '']]
+  UseSpecifiedVpcAvailabilityZones: !Not [!Equals [!Join ['', !Ref 'VpcAvailabilityZones'],'']]
+  LaunchInstances: !Equals [!Ref 'IsFargate', 'false']
+Resources:
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref 'VpcCidrBlock'
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      Tags:
+        - Key: 'Name'
+          Value: !Join [' ', ['ECS', !Ref 'EcsClusterName', '-', 'VPC']]
+        - Key: 'Description'
+          Value: !Join [' ', ['Created for ECS cluster', !Ref 'EcsClusterName']]
+  PublicSubnetAz1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref 'Vpc'
+      CidrBlock: !Ref 'PublicSubnetCidrBlock1'
+      AvailabilityZone: !If
+       - UseSpecifiedVpcAvailabilityZones
+       - !Select ['0', !Ref 'VpcAvailabilityZones']
+       - !Select
+         - '0'
+         - Fn::GetAZs:
+             !Ref AWS::Region
+      Tags:
+        - Key: 'Name'
+          Value: !Join [' ', ['ECS', !Ref 'EcsClusterName', '-', 'Public Subnet 1']]
+        - Key: 'Description'
+          Value: !Join [' ', ['Created for ECS cluster', !Ref 'EcsClusterName']]
+  PublicSubnetAz2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref 'Vpc'
+      CidrBlock: !Ref 'PublicSubnetCidrBlock2'
+      AvailabilityZone: !If
+       - UseSpecifiedVpcAvailabilityZones
+       - !Select ['1', !Ref 'VpcAvailabilityZones']
+       - !Select
+         - '1'
+         - Fn::GetAZs:
+             !Ref AWS::Region
+      Tags:
+        - Key: 'Name'
+          Value: !Join [' ', ['ECS', !Ref 'EcsClusterName', '-', 'Public Subnet 2']]
+        - Key: 'Description'
+          Value: !Join [' ', ['Created for ECS cluster', !Ref 'EcsClusterName']]
+  PrivateSubnetAz1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref 'Vpc'
+      CidrBlock: !Ref 'PrivateSubnetCidrBlock1'
+      MapPublicIpOnLaunch: false
+      AvailabilityZone: !If
+       - UseSpecifiedVpcAvailabilityZones
+       - !Select ['0', !Ref 'VpcAvailabilityZones']
+       - !Select
+         - '0'
+         - Fn::GetAZs:
+             !Ref AWS::Region
+      Tags:
+        - Key: 'Name'
+          Value: !Join [' ', ['ECS', !Ref 'EcsClusterName', '-', 'Private Subnet 1']]
+        - Key: 'Description'
+          Value: !Join [' ', ['Created for ECS cluster', !Ref 'EcsClusterName']]
+  PrivateSubnetAz2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref 'Vpc'
+      CidrBlock: !Ref 'PrivateSubnetCidrBlock2'
+      MapPublicIpOnLaunch: false
+      AvailabilityZone: !If
+       - UseSpecifiedVpcAvailabilityZones
+       - !Select ['1', !Ref 'VpcAvailabilityZones']
+       - !Select
+         - '1'
+         - Fn::GetAZs:
+             !Ref AWS::Region
+      Tags:
+        - Key: 'Name'
+          Value: !Join [' ', ['ECS', !Ref 'EcsClusterName', '-', 'Private Subnet 2']]
+        - Key: 'Description'
+          Value: !Join [' ', ['Created for ECS cluster', !Ref 'EcsClusterName']]
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: 'Name'
+          Value: !Join [' ', ['ECS', !Ref 'EcsClusterName', '-', 'InternetGateway']]
+        - Key: 'Description'
+          Value: !Join [' ', ['Created for ECS cluster', !Ref 'EcsClusterName']]
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref 'Vpc'
+      InternetGatewayId: !Ref 'InternetGateway'
+  RouteViaIgw:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref 'Vpc'
+      Tags:
+        - Key: 'Name'
+          Value: !Join [' ', ['ECS', !Ref 'EcsClusterName', '-', 'RouteTable']]
+        - Key: 'Description'
+          Value: !Join [' ', ['Created for ECS cluster', !Ref 'EcsClusterName']]
+  PublicRouteViaIgw:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref 'RouteViaIgw'
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref 'InternetGateway'
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref 'PublicSubnetAz1'
+      RouteTableId: !Ref 'RouteViaIgw'
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref 'PublicSubnetAz2'
+      RouteTableId: !Ref 'RouteViaIgw'
+
+  NatGateway1EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: AttachGateway
+    Properties:
+      Domain: Vpc
+  NatGateway2EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: AttachGateway
+    Properties:
+      Domain: Vpc
+  NatGateway1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGateway1EIP.AllocationId
+      SubnetId: !Ref PublicSubnetAz1
+  NatGateway2:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGateway2EIP.AllocationId
+      SubnetId: !Ref PublicSubnetAz2
+
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Join [' ', ['ECS', !Ref 'EcsClusterName', '-', 'PrivateRouteTable']]
+        - Key: 'Description'
+          Value: !Join [' ', ['Created for ECS cluster', !Ref 'EcsClusterName']]
+  DefaultPrivateRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway1
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      SubnetId: !Ref PrivateSubnetAz1
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Join [' ', ['ECS', !Ref 'EcsClusterName', '-', 'PrivateRouteTable']]
+        - Key: 'Description'
+          Value: !Join [' ', ['Created for ECS cluster', !Ref 'EcsClusterName']]
+  DefaultPrivateRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway2
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      SubnetId: !Ref PrivateSubnetAz2
+
+  EcsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ECS Allowed Ports
+      VpcId: !Ref 'Vpc'
+      SecurityGroupIngress: !If
+        - CreateELB
+        -
+          -
+            IpProtocol: 'tcp'
+            FromPort: !Ref 'EcsPort'
+            ToPort: !Ref 'EcsPort'
+            CidrIp: !Ref 'SourceCidr'
+          -
+            IpProtocol: 'tcp'
+            FromPort: '1'
+            ToPort: '65535'
+            SourceSecurityGroupId: !Ref 'AlbSecurityGroup'
+        -
+          -
+            IpProtocol: 'tcp'
+            FromPort: !Ref 'EcsPort'
+            ToPort: !Ref 'EcsPort'
+            CidrIp: !Ref 'SourceCidr'
+      Tags:
+        - Key: 'Name'
+          Value: !Join [' ', ['ECS', !Ref 'EcsClusterName', '-', 'ECS SecurityGroup']]
+        - Key: 'Description'
+          Value: !Join [' ', ['Created for ECS cluster', !Ref 'EcsClusterName']]
+  AlbSecurityGroup:
+    Condition: CreateELB
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ELB Allowed Ports
+      VpcId: !Ref 'Vpc'
+      SecurityGroupIngress:
+        - IpProtocol: 'tcp'
+          FromPort: !Ref 'ElbPort'
+          ToPort: !Ref 'ElbPort'
+          CidrIp: !Ref 'SourceCidr'
+      Tags:
+        - Key: 'Name'
+          Value: !Join [' ', ['ECS', !Ref 'EcsClusterName', '-', 'ALB SecurityGroup']]
+        - Key: 'Description'
+          Value: !Join [' ', ['Created for ECS cluster', !Ref 'EcsClusterName']]
+  DefaultTargetGroup:
+    Condition: CreateELB
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref 'Vpc'
+      Port: !Ref 'ElbPort'
+      TargetType: !Ref 'TargetType'
+      Protocol: HTTP
+      Tags:
+        - Key: 'Name'
+          Value: !Join [' ', ['ECS', !Ref 'EcsClusterName', '-', 'TargetGroup']]
+        - Key: 'Description'
+          Value: !Join [' ', ['Created for ECS cluster', !Ref 'EcsClusterName']]
+  EcsElasticLoadBalancer:
+    Condition: CreateELB
+    DependsOn: InternetGateway
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      SecurityGroups:
+        - !Ref 'AlbSecurityGroup'
+      Subnets:
+        - !Ref 'PublicSubnetAz1'
+        - !Ref 'PublicSubnetAz2'
+      Scheme: internet-facing
+      Tags:
+        - Key: 'Name'
+          Value: !Join [' ', ['ECS', !Ref 'EcsClusterName', '-', 'ALB']]
+        - Key: 'Description'
+          Value: !Join [' ', ['Created for ECS cluster', !Ref 'EcsClusterName']]
+  LoadBalancerListener:
+    Condition: CreateELB
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref 'EcsElasticLoadBalancer'
+      Port: !Ref 'ElbPort'
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref 'DefaultTargetGroup'
+  EcsInstanceLc:
+    Condition: LaunchInstances
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId: !Ref 'EcsAmiId'
+      InstanceType: !Ref 'EcsInstanceType'
+      AssociatePublicIpAddress: true
+      IamInstanceProfile: !Ref 'IamRoleInstanceProfile'
+      KeyName: !If [CreateEC2LCWithKeyPair, !Ref 'KeyName', !Ref 'AWS::NoValue']
+      SecurityGroups:
+        - !Ref 'EcsSecurityGroup'
+      UserData: !If
+        - SetEndpointToECSAgent
+        - !Base64
+          'Fn::Join':
+            - ''
+            - - |
+                #!/bin/bash
+              - echo ECS_CLUSTER=
+              - !Ref EcsClusterName
+              - ' >> /etc/ecs/ecs.config'
+              - |-
+
+                echo ECS_BACKEND_HOST=
+              - !Ref EcsEndpoint
+              - ' >> /etc/ecs/ecs.config'
+        - !Base64
+          'Fn::Join':
+            - ''
+            - - |
+                #!/bin/bash
+              - echo ECS_CLUSTER=
+              - !Ref EcsClusterName
+              - ' >> /etc/ecs/ecs.config'
+  EcsInstanceAsg:
+    Condition: LaunchInstances
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+        - !Join [',', [!Ref 'PublicSubnetAz1', !Ref 'PublicSubnetAz2']]
+      LaunchConfigurationName: !Ref 'EcsInstanceLc'
+      MinSize: '0'
+      MaxSize: !Ref 'AsgMaxSize'
+      DesiredCapacity: !Ref 'AsgMaxSize'
+      Tags:
+        - Key: 'Name'
+          Value: !Join [' ', ['ECS', !Ref 'EcsClusterName', '-', 'EC2 Instance']]
+          PropagateAtLaunch: true
+        - Key: 'Description'
+          Value: !Join [' ', ['Created for ECS cluster', !Ref 'EcsClusterName']]
+          PropagateAtLaunch: true
+  
+  KMSKey:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        KMSKeyDescription: !Ref KMSKeyDescription
+        KMSKeyEnabled: !Ref KMSKeyEnabled
+        KMSKeyEnableRotation: !Ref KMSKeyEnableRotation
+        KMSKeyKeyPolicy: !Ref KMSKeyKeyPolicy
+        KMSKeyKeySpec: !Ref KMSKeyKeySpec
+        KMSKeyKeyUsage: !Ref KMSKeyKeyUsage
+        KMSKeyMultiRegion: !Ref KMSKeyMultiRegion
+        KMSKeyPendingWindowInDays: !Ref KMSKeyPendingWindowInDays
+        KMSKeyAliasName: !Ref KMSKeyAliasName
+      TemplateURL: https://air-cf-templates.s3.amazonaws.com/aisight/template-kms.yml
+
+  ECSCluster:
+    Type: AWS::CloudFormation::Stack 
+    DependsOn: KMSKey
+    Properties:
+      Parameters:
+        ECSClusterCapacityProviders: !Ref ECSClusterCapacityProviders
+        ECSClusterClusterName: !Ref EcsClusterName
+        ECSClusterKmsKeyId: !GetAtt KMSKey.Outputs.KmsKeyArn
+        AWSLogsLogGroupRetentionInDays: !Ref AWSLogsLogGroupRetentionInDays
+      TemplateURL: https://air-cf-templates.s3.amazonaws.com/aisight/template-ecscluster.yml
+
+
+Outputs:
+  EcsInstanceAsgName:
+    Condition: LaunchInstances
+    Description: Auto Scaling Group Name for ECS Instances
+    Value: !Ref 'EcsInstanceAsg'
+  EcsElbName:
+    Description: Load Balancer for ECS Service
+    Value: !If [CreateELB, !Ref 'EcsElasticLoadBalancer', '']
+  Version:
+    Description: ECS Cloudformation template version
+    Value: 3.0.0
