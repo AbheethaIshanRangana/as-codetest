@@ -61,5 +61,5 @@ jobs:
         uses: aws-actions/aws-cloudformation-github-deploy@v1
         with:
           name: flaskapp
-          template: $GITHUB_WORKSPACE/infrastructure/cloudformation/templates/base-resources.yml
+          template: ./infrastructure/cloudformation/templates/base-resources.yml
           parameter-overrides: "file:///${{ github.workspace }}/parameters.json"
