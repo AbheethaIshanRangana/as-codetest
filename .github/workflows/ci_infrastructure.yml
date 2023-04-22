@@ -1,4 +1,4 @@
-name: Infrastructure CI 
+name: Infrastructure CI/CD
 
 on: 
   push:
@@ -8,16 +8,20 @@ on:
     paths:
       - 'infrastructure/**'
       - '!infrastructure/README.md'
+  pull_request:
+    branches:
+      - dev
+      - main
   workflow_dispatch:
     inputs:
       directory:
         description: "Set repo directory"
         required: true
-        default: 'application'
+        default: 'infrastructure'
         type: choice
         options:
-          - application
           - infrastructure
+          - application
 
 jobs:
 
