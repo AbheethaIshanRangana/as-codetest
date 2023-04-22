@@ -37,7 +37,8 @@ jobs:
           unzip awscliv2.zip
           sudo ./aws/install -i /usr/local/aws-cli -b /usr/local/bin
       - name: awscli version
-        run: aws --version
+        run: |
+          aws --version
   build:
     runs-on: ubuntu-latest
     steps:
