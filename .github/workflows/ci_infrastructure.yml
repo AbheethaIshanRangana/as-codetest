@@ -51,12 +51,12 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: | 
           aws configure set aws_access_key_id ${{ env.AWS_ACCESS_KEY_ID }} && aws configure set aws_secret_access_key ${{ env.AWS_SECRET_ACCESS_KEY }} && aws configure set default.region ${{ env.AWS_DEFAULT_REGION }}
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
+      #- name: Configure AWS Credentials
+      #  uses: aws-actions/configure-aws-credentials@v2
+      #  with:
           #role-to-assume: ${{ env.AWS_CF_IAM_ASSUME_ROLE }}
-          role-to-assume: arn:aws:iam::846245987735:role/cf-iam-role
-          aws-region: us-east-1
+      #    role-to-assume: arn:aws:iam::846245987735:role/cf-iam-role
+      #    aws-region: us-east-1
       - name: Deploy infrastrcture
         uses: aws-actions/aws-cloudformation-github-deploy@v1
         with:
