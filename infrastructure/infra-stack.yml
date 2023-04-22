@@ -1,9 +1,40 @@
-AWSTemplateFormatVersion: "2010-09-09"
-Description: ->
-  AWS Cloudformation Template to create ECS Cluster.
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Infrastructure stack
 
 Parameters:
-  # ECS Cluster
+  # VPC Stack Parameters
+  VPCEnvironmentName:
+    Description: An environment name that will be prefixed to resource names
+    Type: String
+    Default: dev 
+    AllowedValues:
+      - dev 
+      - qa 
+      - uat 
+      - prod
+  VPCVpcCIDR:
+    Description: Please enter the IP range (CIDR notation) for this VPC
+    Type: String
+    Default: 10.192.0.0/16
+  VPCPublicSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the first Availability Zone
+    Type: String
+    Default: 10.192.10.0/24
+  VPCPublicSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the second Availability Zone
+    Type: String
+    Default: 10.192.11.0/24
+  VPCPrivateSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the first Availability Zone
+    Type: String
+    Default: 10.192.20.0/24
+  VPCPrivateSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the second Availability Zone
+    Type: String
+    Default: 10.192.21.0/24
+
+  # ECS Cluster Parameters
   ECSClusterCapacityProviders:
     Type: String
     Default: FARGATE
@@ -19,8 +50,19 @@ Parameters:
     Type: String
     Default: ''
     Description: Specifies the ARN of the AWS Kms Cmk used to encrypt log group and performance insight data.
-  
-  # KMS Key
+  AWSLogsLogGroupRetentionInDays:
+    Type: Number
+    Default: 60
+    Description: The number of days to retain the log events in the specified log group.
+    AllowedValues:
+      - 60
+      - 90
+      - 120
+      - 150
+      - 180
+      - 365
+
+  # KMS Key Parameters
   KMSKeyDescription:
     Type: String
     Default: AWS KMS Key
@@ -90,40 +132,41 @@ Parameters:
     AllowedPattern: ^alias/[a-zA-Z0-9/_-]+$
     Description: Specifies the alias name. This value must begin with alias/ followed by a name, such as alias/ExampleAlias.
 
-  AWSLogsLogGroupRetentionInDays:
-    Type: Number
-    Default: 60
-    Description: The number of days to retain the log events in the specified log group.
-    AllowedValues:
-      - 60
-      - 90
-      - 120
-      - 150
-      - 180
-      - 365
-
 Resources:
-  ECSCluster:
-    Type: AWS::ECS::Cluster
-    DependsOn: ECSClusterContainerInsightsLogGroup
+  VPC:
+    Type: AWS::CloudFormation::Stack 
     Properties:
-      CapacityProviders:
-        - !Ref ECSClusterCapacityProviders
-      ClusterName: !Ref ECSClusterClusterName
-      ClusterSettings: 
-        - Name: containerInsights
-          Value: enabled
-      
-  ECSClusterContainerInsightsLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      KmsKeyId: !Ref ECSClusterKmsKeyId
-      LogGroupName: !Sub /aws/ecs/containerinsights/${ECSClusterClusterName}/performance
-      RetentionInDays: !Ref AWSLogsLogGroupRetentionInDays
+      Parameters:
+        EnvironmentName: !Ref VPCEnvironmentName
+        VpcCIDR: !Ref VPCVpcCIDR
+        PublicSubnet1CIDR: !Ref VPCPublicSubnet1CIDR
+        PublicSubnet2CIDR: !Ref VPCPublicSubnet2CIDR
+        PrivateSubnet1CIDR: !Ref VPCPrivateSubnet1CIDR
+        PrivateSubnet2CIDR: !Ref VPCPrivateSubnet2CIDR
+      TemplateURL: https://air-cf-templates.s3.amazonaws.com/aisight/template-vpc.yml
 
-Outputs:
-  ECSClusterArn:
-    Description: ECS Cluster Arn
-    Value: !GetAtt ECSCluster.Arn
-    Export:
-      Name: !Sub "${AWS::StackName}-ECSClusterArn"
+  KMSKey:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        KMSKeyDescription: !Ref KMSKeyDescription
+        KMSKeyEnabled: !Ref KMSKeyEnabled
+        KMSKeyEnableRotation: !Ref KMSKeyEnableRotation
+        KMSKeyKeyPolicy: !Ref KMSKeyKeyPolicy
+        KMSKeyKeySpec: !Ref KMSKeyKeySpec
+        KMSKeyKeyUsage: !Ref KMSKeyKeyUsage
+        KMSKeyMultiRegion: !Ref KMSKeyMultiRegion
+        KMSKeyPendingWindowInDays: !Ref KMSKeyPendingWindowInDays
+        KMSKeyAliasName: !Ref KMSKeyAliasName
+      TemplateURL: https://air-cf-templates.s3.amazonaws.com/aisight/template-kms.yml
+
+  ECSCluster:
+    Type: AWS::CloudFormation::Stack 
+    DependsOn: KMSKey
+    Properties:
+      Parameters:
+        ECSClusterCapacityProviders: !Ref ECSClusterCapacityProviders
+        ECSClusterClusterName: !Ref ECSClusterClusterName
+        ECSClusterKmsKeyId: !Join [ "/", [ !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key", !Ref KMSKey ] ]
+        AWSLogsLogGroupRetentionInDays: !Ref AWSLogsLogGroupRetentionInDays
+      TemplateURL: https://air-cf-templates.s3.amazonaws.com/aisight/template-ecscluster.yml
