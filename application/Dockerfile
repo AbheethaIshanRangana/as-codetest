@@ -5,6 +5,6 @@ WORKDIR /app
 COPY requirements.txt requirements.txt
 COPY *.py /app/
 RUN pip3 --no-cache-dir install -r requirements.txt
-EXPOSE 8080
+EXPOSE 80
 ENTRYPOINT ["python3"]
 CMD  ["app.py"]
