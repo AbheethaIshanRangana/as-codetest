@@ -36,7 +36,7 @@ jobs:
           aws --version
   
 
-  Deploy-CF-Stack
+  Deploy-CF-Stack:
     name: Deploy CF Stack 
     runs-on: ubuntu-latest
     env:
