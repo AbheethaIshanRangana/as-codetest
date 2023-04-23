@@ -236,9 +236,7 @@ jobs:
               --launch-type FARGATE \
               --platform-version LATEST \
               --network-configuration "awsvpcConfiguration={subnets=[${{ vars.ECS_SUBNETS }}],securityGroups=[${{ vars.ECS_SG }}],assignPublicIp=DISABLED}" \
-              --load-balancers "targetGroupArn=${{ vars.ALB_TG }},containerName=${{ vars.ECS_CONTAINER_NAME }},containerPort=${{ vars.ECS_CONTAINER_PORT }}" \
-              --deployment-controller type=ECS \
-              --scaling-configuration "minCapacity=${{ vars.SCALING_MIN_CAPACITY }},maxCapacity=${{ vars.SCALING_MAX_CAPACITY }},roleARN=${{ vars.SCALING_ROLE_ARN }},resourceId=${{ vars.SCALING_RESOURCE_ID }},scalableDimension=ecs:service:DesiredCount,serviceNamespace=ecs"
+              --load-balancers "targetGroupArn=${{ vars.ALB_TG }},containerName=${{ vars.ECS_CONTAINER_NAME }},containerPort=${{ vars.ECS_CONTAINER_PORT }}"
           fi       
       - name: Deploy to Amazon ECS service
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
