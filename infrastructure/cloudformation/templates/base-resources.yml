@@ -524,7 +524,7 @@ Resources:
         KMSKeyMultiRegion: !Ref KMSKeyMultiRegion
         KMSKeyPendingWindowInDays: !Ref KMSKeyPendingWindowInDays
         KMSKeyAliasName: !Ref KMSKeyAliasName
-      TemplateURL: https://air-cf-templates.s3.amazonaws.com/aisight/template-kms.yml
+      TemplateURL: https://air-cf-templates.s3.amazonaws.com/aisight/templates/template-kms.yml
 
   ECSCluster:
     Type: AWS::CloudFormation::Stack 
@@ -535,7 +535,7 @@ Resources:
         ECSClusterClusterName: !Ref EcsClusterName
         ECSClusterKmsKeyId: !GetAtt KMSKey.Outputs.KmsKeyArn
         AWSLogsLogGroupRetentionInDays: !Ref AWSLogsLogGroupRetentionInDays
-      TemplateURL: https://air-cf-templates.s3.amazonaws.com/aisight/template-ecscluster.yml
+      TemplateURL: https://air-cf-templates.s3.amazonaws.com/aisight/templates/template-ecscluster.yml
 
 
 Outputs:
