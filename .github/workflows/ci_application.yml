@@ -186,10 +186,10 @@ jobs:
         id: render-app-container
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-        task-definition: $GITHUB_WORKSPACE/application/task-definition.json
-        container-name: flask-app
-        image: ${{ env.DOCKER_IMAGE }}
-        environment-variables: "LOG_LEVEL=info"
+          task-definition: $GITHUB_WORKSPACE/application/task-definition.json
+          container-name: flask-app
+          image: ${{ env.DOCKER_IMAGE }}
+          environment-variables: "LOG_LEVEL=info"
       - name: Deploy to Amazon ECS service
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
