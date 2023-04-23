@@ -72,7 +72,7 @@ jobs:
           aws configure set aws_access_key_id ${{ env.AWS_ACCESS_KEY_ID }} && aws configure set aws_secret_access_key ${{ env.AWS_SECRET_ACCESS_KEY }} && aws configure set default.region ${{ env.AWS_DEFAULT_REGION }}
       - name: Publish CF templates 
         run: |
-          aws s3 sync infrastructure/cloudformation/templates/ s3://air-cf-templates/aisight/
+          aws s3 sync infrastructure/cloudformation/templates/ s3://air-cf-templates/aisight/templates/
   Push-Parameter-Json-File:
     name: Push Parameter JSON file 
     runs-on: ubuntu-latest
@@ -90,7 +90,7 @@ jobs:
           aws configure set aws_access_key_id ${{ env.AWS_ACCESS_KEY_ID }} && aws configure set aws_secret_access_key ${{ env.AWS_SECRET_ACCESS_KEY }} && aws configure set default.region ${{ env.AWS_DEFAULT_REGION }}
       - name: Publish CF templates 
         run: |
-          aws s3 sync infrastructure/cloudformation/parameters/ s3://air-cf-templates/aisight/
+          aws s3 sync infrastructure/cloudformation/parameters/ s3://air-cf-templates/aisight/parameters/
 
   Deploy-CF-Stack:
     name: Deploy CF Stack 
@@ -114,25 +114,22 @@ jobs:
           aws --version
           if aws cloudformation describe-stacks --stack-name "${{ env.STACK_NAME }}" >/dev/null 2>&1; then
             echo "Stack ${{ env.STACK_NAME }} exists"
-            #aws cloudformation update-stack --stack-name ${{ env.STACK_NAME }} --template-url https://air-cf-templates.s3.amazonaws.com/aisight/base-resources.yml --cli-input-json https://air-cf-templates.s3.amazonaws.com/aisight/parameters.json --capabilities CAPABILITY_NAMED_IAM
-
-            aws cloudformation update-stack --stack-name ${{ env.STACK_NAME }} --template-url https://air-cf-templates.s3.amazonaws.com/aisight/base-resources.yml --cli-input-json file://infrastructure/cloudformation/parameters/parameters.json --capabilities CAPABILITY_NAMED_IAM
-
+            aws cloudformation update-stack --stack-name ${{ env.STACK_NAME }} --template-url https://air-cf-templates.s3.amazonaws.com/aisight/templates/base-resources.yml --cli-input-json file://infrastructure/cloudformation/parameters/parameters.json --capabilities CAPABILITY_NAMED_IAM
             if [ $? != "0" ]; then
               aws cloudformation describe-stack-events --stack-name "${{ env.STACK_NAME }}" --query 'StackEvents[*]' --output yaml
             fi
           else 
             echo "Stack ${{ env.STACK_NAME }} does not exists"
-            aws cloudformation create-stack --stack-name ${{ env.STACK_NAME }} --template https://air-cf-templates.s3.amazonaws.com/aisight/base-resources.yml --parameter-overrides https://air-cf-templates.s3.amazonaws.com/aisight/parameters.json --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND
+            aws cloudformation create-stack --stack-name ${{ env.STACK_NAME }} --template https://air-cf-templates.s3.amazonaws.com/aisight/templates/base-resources.yml --parameter-overrides https://air-cf-templates.s3.amazonaws.com/aisight/parameters/parameters.json --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND
             if [ $? != "0" ]; then
               aws cloudformation describe-stack-events --stack-name "${{ env.STACK_NAME }}" --query 'StackEvents[*]' --output yaml
             fi
           fi 
-      - name: Upload CF deploy stack event log 
-        uses: actions/upload-artifact@v3
-        with:
-          name: cf-event-artifact
-          path: $GITHUB_WORKSPACE/stack_events.yml
+      #- name: Upload CF deploy stack event log 
+      #  uses: actions/upload-artifact@v3
+      #  with:
+      #    name: cf-event-artifact
+      #    path: $GITHUB_WORKSPACE/stack_events.yml
       - name: Open Deployment Issue 
         if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
