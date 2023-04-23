@@ -114,16 +114,18 @@ jobs:
           aws --version
           if aws cloudformation describe-stacks --stack-name "${{ env.STACK_NAME }}" >/dev/null 2>&1; then
             echo "Stack ${{ env.STACK_NAME }} exists"
-            #aws cloudformation update-stack --stack-name ${{ env.STACK_NAME }} --template-url https://air-cf-templates.s3.amazonaws.com/aisight/base-resources.yml --parameter-overrides https://air-cf-templates.s3.amazonaws.com/aisight/parameters.json --no-execute-changeset --output yaml > $GITHUB_WORKSPACE/stack_events.yml
-            #if [ $? != "0" ]; then
-            #  aws cloudformation describe-stack-events --stack-name "${{ env.STACK_NAME }}" --query 'StackEvents[*]' --output yaml > $GITHUB_WORKSPACE/stack_events.yml
-            #fi
+
+            aws cloudformation update-stack --stack-name ${{ env.STACK_NAME }} --template-url https://air-cf-templates.s3.amazonaws.com/aisight/base-resources.yml --parameter-overrides https://air-cf-templates.s3.amazonaws.com/aisight/parameters.json --no-execute-changeset
+            if [ $? != "0" ]; then
+              aws cloudformation describe-stack-events --stack-name "${{ env.STACK_NAME }}" --query 'StackEvents[*]' --output yaml
+            fi
+
           else 
             echo "Stack ${{ env.STACK_NAME }} does not exists"
-            #aws cloudformation create-stack --stack-name ${{ env.STACK_NAME }} --template https://air-cf-templates.s3.amazonaws.com/aisight/base-resources.yml              --parameter-overrides https://air-cf-templates.s3.amazonaws.com/aisight/parameters.json --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --output yaml > $GITHUB_WORKSPACE/stack_events.yml
-            #if [ $? != "0" ]; then
-            #  aws cloudformation describe-stack-events --stack-name "${{ env.STACK_NAME }}" --query 'StackEvents[*]' --output yaml > $GITHUB_WORKSPACE/stack_events.yml
-            #fi
+            aws cloudformation create-stack --stack-name ${{ env.STACK_NAME }} --template https://air-cf-templates.s3.amazonaws.com/aisight/base-resources.yml --parameter-overrides https://air-cf-templates.s3.amazonaws.com/aisight/parameters.json --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND
+            if [ $? != "0" ]; then
+              aws cloudformation describe-stack-events --stack-name "${{ env.STACK_NAME }}" --query 'StackEvents[*]' --output yaml
+            fi
           fi 
       - name: Upload CF deploy stack event log 
         uses: actions/upload-artifact@v3
