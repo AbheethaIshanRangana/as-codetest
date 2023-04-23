@@ -161,7 +161,7 @@ jobs:
           }'
 
   Deployment-Approval:
-    name: Application Deployment Approval 
+    name: App Deployment Approval 
     runs-on: ubuntu-latest 
     needs:
       - Docker-Build-And-Push
