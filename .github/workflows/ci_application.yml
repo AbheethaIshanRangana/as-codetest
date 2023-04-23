@@ -24,7 +24,9 @@ on:
           - infrastructure
 
 env:
-  DOCKER_IMAGE_NAME: "flaskapp"  
+  DOCKER_IMAGE_NAME: "flaskapp"
+  ECS_SERVICE: "flask"
+  ECS_CLUSTER: "flaskecscluster"
 
 jobs:
 
@@ -144,6 +146,7 @@ jobs:
         run: |
           docker login -u ${{ env.DOCKER_USERNAME }} -p ${{ env.DOCKER_PASSWORD}}
           docker push ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.IMAGE_ID }}
+          echo "DOCKER_IMAGE=${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.IMAGE_ID }}" >> $GITHUB_ENV
       - name: Open Docker Build/Push Issue 
         if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
@@ -179,3 +182,17 @@ jobs:
       - name: Deployment 
         run: |
           echo "Application Deployment"
+      - name: Render Amazon ECS task definition
+        id: render-app-container
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: $GITHUB_WORKSPACE/application/task-definition.json
+          container-name: flask-app
+          image: ${{ env.DOCKER_IMAGE }}
+          environment-variables: "LOG_LEVEL=info"
+      - name: Deploy to Amazon ECS service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.render-app-container.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}

@@ -58,6 +58,7 @@ jobs:
   Publish-CF-Templates:
     name: Publish CF templates
     runs-on: ubuntu-latest 
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs:
       - CF-Template-Validation
     steps:
@@ -77,6 +78,7 @@ jobs:
   Push-Parameter-Json-File:
     name: Push Parameter JSON file 
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs:
       - CF-Template-Validation
     steps:
@@ -96,6 +98,7 @@ jobs:
   Deployment-Approval:
     name: Infra Deployment Approval 
     runs-on: ubuntu-latest 
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs:
       - Publish-CF-Templates
       - Push-Parameter-Json-File
@@ -111,6 +114,7 @@ jobs:
   Deploy-CF-Stack:
     name: Deploy CF Stack 
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs:
       - Deployment-Approval
     steps:
