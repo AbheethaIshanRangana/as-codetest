@@ -1,0 +1,23 @@
+{
+    "Parameters": {
+        "AsgMaxSize": "1",
+        "CreateElasticLoadBalancer": "true",
+        "EcsAmiId": "ami-0d09143c6fc181fe3",
+        "EcsClusterName": "flaskapp",
+        "EcsEndpoint": "",
+        "EcsInstanceType": "t2.micro",
+        "EcsPort": "80",
+        "ElbHealthCheckTarget": "http:80/",
+        "ElbPort": "80",
+        "IamRoleInstanceProfile": "ecsInstanceRole",
+        "IsFargate": "true",
+        "KeyName": "",
+        "SourceCidr": "0.0.0.0/0",
+        "SubnetCidrBlock1": "10.0.0.0/24",
+        "SubnetCidrBlock2": "10.0.1.0/24",
+        "TargetGroupName": "ECSFirstRunTargetGroup",
+        "TargetType": "ip",
+        "VpcAvailabilityZones": "us-east-1a,us-east-1b,us-east-1c,us-east-1d,us-east-1e,us-east-1f",
+        "VpcCidrBlock": "10.0.0.0/16"
+    }
+}
