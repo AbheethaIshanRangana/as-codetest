@@ -137,10 +137,7 @@ jobs:
             fi
           else 
             echo "Stack ${{ env.STACK_NAME }} does not exists"
-            aws cloudformation create-stack --stack-name ${{ env.STACK_NAME }} \
-                --template-body file://infrastructure/cloudformation/templates/base-resources.yml \
-                --parameters file://infrastructure/cloudformation/parameters/create-parameters.json \ 
-                --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND
+            aws cloudformation create-stack --stack-name ${{ env.STACK_NAME }} --template-body file://infrastructure/cloudformation/templates/base-resources.yml --parameters file://infrastructure/cloudformation/parameters/create-parameters.json --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND
             if [ $? != "0" ]; then
               aws cloudformation describe-stack-events --stack-name "${{ env.STACK_NAME }}" --query 'StackEvents[*]' --output yaml
             fi
