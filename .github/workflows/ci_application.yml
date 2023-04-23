@@ -235,7 +235,8 @@ jobs:
               --desired-count ${{ vars.TASK_COUNT }} \
               --launch-type FARGATE \
               --platform-version LATEST \
-              --network-configuration "awsvpcConfiguration={subnets=[${{ vars.ECS_SUBNETS }}],securityGroups=[${{ vars.ECS_SG }}],assignPublicIp=DISABLED}"
+              --network-configuration "awsvpcConfiguration={subnets=[${{ vars.ECS_SUBNETS }}],securityGroups=[${{ vars.ECS_SG }}],assignPublicIp=DISABLED}" \
+              --load-balancers "targetGroupArn=${{ vars.ALB_TG }},containerName=${{ vars.ECS_CONTAINER_NAME }},containerPort=${{ vars.ECS_CONTAINER_PORT }}"
           fi       
       - name: Deploy to Amazon ECS service
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
