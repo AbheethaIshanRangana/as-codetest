@@ -114,13 +114,13 @@ jobs:
           aws --version
           if aws cloudformation describe-stacks --stack-name "${{ env.STACK_NAME }}" >/dev/null 2>&1; then
             echo "Stack ${{ env.STACK_NAME }} exists"
-            aws cloudformation update-stack --stack-name ${{ env.STACK_NAME }} --template-url https://air-cf-templates.s3.amazonaws.com/aisight/templates/base-resources.yml --cli-input-json file://infrastructure/cloudformation/parameters/parameters.json --capabilities CAPABILITY_NAMED_IAM
+            aws cloudformation update-stack --stack-name ${{ env.STACK_NAME }} --template-url https://air-cf-templates.s3.amazonaws.com/aisight/templates/base-resources.yml --cli-input-json file://infrastructure/cloudformation/parameters/update-parameters.json --capabilities CAPABILITY_NAMED_IAM
             if [ $? != "0" ]; then
               aws cloudformation describe-stack-events --stack-name "${{ env.STACK_NAME }}" --query 'StackEvents[*]' --output yaml
             fi
           else 
             echo "Stack ${{ env.STACK_NAME }} does not exists"
-            aws cloudformation create-stack --stack-name ${{ env.STACK_NAME }} --template-url https://air-cf-templates.s3.amazonaws.com/aisight/templates/base-resources.yml --parameter-overrides https://air-cf-templates.s3.amazonaws.com/aisight/parameters/parameters.json --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND
+            aws cloudformation create-stack --stack-name ${{ env.STACK_NAME }} --template-url https://air-cf-templates.s3.amazonaws.com/aisight/templates/base-resources.yml --parameter-overrides https://air-cf-templates.s3.amazonaws.com/aisight/parameters/create-parameters.json --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND
             if [ $? != "0" ]; then
               aws cloudformation describe-stack-events --stack-name "${{ env.STACK_NAME }}" --query 'StackEvents[*]' --output yaml
             fi
@@ -137,6 +137,6 @@ jobs:
           --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' --header 'content-type: application/json' \
           --data '{
             "title": "Automated issue for commit: ${{ github.sha }}",
-            "body": "This issue was automatically created by the GIthub Action workflow **${{ github.workflow }}**. \n\n The commit has was: _${{ github.sha }}_.",
+            "body": "This issue was automatically created by the Github Action workflow **${{ github.workflow }}**. \n\n The commit has was: _${{ github.sha }}_.",
             "assignees": ["${{ github.event.pull_request.user.login }}"]
           }'
