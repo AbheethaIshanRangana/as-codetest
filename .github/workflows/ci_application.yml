@@ -104,6 +104,12 @@ jobs:
         with:
           image: flaskapp:latest
           args: --file=$GITHUB_WORKSPACE/application/Dockerfile
+      - name: Checkov scanning 
+        continue-on-error: true
+        run: |
+          pip install checkov
+          checkov -v 
+          checkov -d $GITHUB_WORKSPACE/application/ --framework dockerfile
 
   Docker-Build-And-Push:
     name: Docker Build And Push
