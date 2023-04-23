@@ -138,8 +138,8 @@ jobs:
           else 
             echo "Stack ${{ env.STACK_NAME }} does not exists"
             aws cloudformation create-stack --stack-name ${{ env.STACK_NAME }} \
-                --template-url https://air-cf-templates.s3.amazonaws.com/aisight/templates/base-resources.yml \
-                --parameter-overrides $(aws s3 cp s3://air-cf-templates/aisight/parameters/create-parameters.json - | jq -r '.[] | [.ParameterKey, .ParameterValue] | join("=")') \
+                --template-body file://infrastructure/cloudformation/templates/base-resources.yml 
+                --parameters file://infrastructure/cloudformation/parameters/create-parameters.json 
                 --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND
             if [ $? != "0" ]; then
               aws cloudformation describe-stack-events --stack-name "${{ env.STACK_NAME }}" --query 'StackEvents[*]' --output yaml
