@@ -44,10 +44,18 @@ jobs:
           pip install checkov
           checkov -v
           checkov -d $GITHUB_WORKSPACE/infrastructure/cloudformation/templates/ --framework cloudformation
+      - name: Regula scanning 
+        continue-on-error: true
+        run: |
+          wget https://github.com/fugue/regula/releases/download/v3.2.1/regula_3.2.1_Linux_x86_64.tar.gz && \
+            tar -zxvf regula_3.2.1_Linux_x86_64.tar.gz
+          ./regula run $GITHUB_WORKSPACE/infrastructure/cloudformation/templates/*.yml -v
 
   Deploy-CF-Stack:
     name: Deploy CF Stack 
     runs-on: ubuntu-latest
+    needs:
+      - CF-Template-Validation
     env:
       AWS_CF_IAM_ASSUME_ROLE: ${{ secrets.AWS_CF_ASSUME_ROLE }}
       AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
