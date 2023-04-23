@@ -146,6 +146,8 @@ jobs:
         run: |
           docker login -u ${{ env.DOCKER_USERNAME }} -p ${{ env.DOCKER_PASSWORD}}
           docker push ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.IMAGE_ID }}
+          docker tag ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.IMAGE_ID }} ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
+          docker push ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
           echo "DOCKER_IMAGE=${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.IMAGE_ID }}" >> $GITHUB_ENV
       - name: Open Docker Build/Push Issue 
         if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -196,3 +198,4 @@ jobs:
           task-definition: ${{ steps.render-app-container.outputs.task-definition }}
           service: ${{ env.ECS_SERVICE }}
           cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
