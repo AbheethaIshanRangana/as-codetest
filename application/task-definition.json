@@ -4,7 +4,7 @@
           "command": [],
           "entryPoint": [],
           "essential": true,
-          "image": "abheethaishan/flaskapp:3fecbbaf",
+          "image": "abheethaishan/flaskapp:latest",
           "logConfiguration": { 
              "logDriver": "awslogs",
              "options": { 
