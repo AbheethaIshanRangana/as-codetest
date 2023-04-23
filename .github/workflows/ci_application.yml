@@ -210,6 +210,16 @@ jobs:
           container-name: flask-app
           image: ${{ env.DOCKER_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:latest
           environment-variables: "LOG_LEVEL=info"
+      - name: Create/Upate ECS Task Definition
+        run: |
+          TASK_DEFINITION_STATUS=$(aws ecs describe-task-definition --task-definition ${{ vars.TD_FAMILY }} | jq -r '.taskDefinition.status')
+          if [[ ${TASK_DEFINITION_STATUS} == "ACTIVE" ]]; then
+            echo "The ${TASK_DEFINITION} task definition is active."
+          else
+            echo "The ${TASK_DEFINITION} task definition is not active."
+            echo "Creating task definition"
+            aws ecs register-task-definition --cli-input-json file://application/task-definition.json
+          fi
       - name: Create/Update ECS service 
         run: |
           SERVICE_STATUS=$(aws ecs describe-services --services ${{ vars.ECS_SERVICE }} --cluster ${{ vars.ECS_CLUSTER }} | jq -r '.services[].status')
