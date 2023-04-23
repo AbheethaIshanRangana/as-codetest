@@ -128,10 +128,7 @@ jobs:
           aws --version
           if aws cloudformation describe-stacks --stack-name "${{ env.STACK_NAME }}" >/dev/null 2>&1; then
             echo "Stack ${{ env.STACK_NAME }} exists"
-            aws cloudformation update-stack --stack-name ${{ env.STACK_NAME }} \
-                --template-body file://infrastructure/cloudformation/templates/base-resources.yml \
-                --parameters file://infrastructure/cloudformation/parameters/update-parameters.json \
-                --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND
+            aws cloudformation update-stack --stack-name ${{ env.STACK_NAME }} --template-body file://infrastructure/cloudformation/templates/base-resources.yml --parameters file://infrastructure/cloudformation/parameters/update-parameters.json --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND
             if [ $? != "0" ]; then
               aws cloudformation describe-stack-events --stack-name "${{ env.STACK_NAME }}" --query 'StackEvents[*]' --output yaml
             fi
