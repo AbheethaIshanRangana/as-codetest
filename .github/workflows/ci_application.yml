@@ -181,18 +181,17 @@ jobs:
     needs: 
       - Deployment-Approval
     steps:
-      - name: Deployment 
-        run: |
-          echo "Application Deployment"
+      - name: Checkout
+        uses: actions/checkout@v3
       - name: Render Amazon ECS task definition
         id: render-app-container
         env: 
           DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: task-definition.json
+          task-definition: application/task-definition.json
           container-name: flask-app
-          image: ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
+          image: ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE }}
           environment-variables: "LOG_LEVEL=info"
       - name: Deploy to Amazon ECS service
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
