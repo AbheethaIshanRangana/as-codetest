@@ -23,10 +23,10 @@ on:
           - application
           - infrastructure
 
-env:
-  DOCKER_IMAGE_NAME: "flaskapp"
-  ECS_SERVICE: "flask"
-  ECS_CLUSTER: "flaskecscluster"
+#env:
+#  DOCKER_IMAGE_NAME: "flaskapp"
+#  ECS_SERVICE: "flask"
+#  ECS_CLUSTER: "flaskecscluster"
 
 jobs:
 
@@ -99,7 +99,7 @@ jobs:
       - name: Build a Docker image for Snyk testing
         run: | 
           cd application/ 
-          docker build -t ${{ env.DOCKER_IMAGE_NAME }}:latest .
+          docker build -t ${{ vars.DOCKER_IMAGE_NAME }}:latest .
       - name: Run Snyk to check Docker image for vulnerabilities
         continue-on-error: true
         uses: snyk/actions/docker@master
@@ -141,14 +141,14 @@ jobs:
       - name: Build Docker image to deploy
         run: |
           cd $GITHUB_WORKSPACE/application/
-          docker build -t ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.IMAGE_ID }} . 
+          docker build -t ${{ env.DOCKER_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:${{ env.IMAGE_ID }} . 
       - name: Push Docker image to DockerHub
         run: |
           docker login -u ${{ env.DOCKER_USERNAME }} -p ${{ env.DOCKER_PASSWORD}}
-          docker push ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.IMAGE_ID }}
-          docker tag ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.IMAGE_ID }} ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
-          docker push ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
-          echo "DOCKER_IMAGE=${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.IMAGE_ID }}" >> $GITHUB_ENV
+          docker push ${{ env.DOCKER_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:${{ env.IMAGE_ID }}
+          docker tag ${{ env.DOCKER_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:${{ env.IMAGE_ID }} ${{ env.DOCKER_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:latest
+          docker push ${{ env.DOCKER_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:latest
+          echo "DOCKER_IMAGE=${{ env.DOCKER_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:${{ env.IMAGE_ID }}" >> $GITHUB_ENV
       - name: Open Docker Build/Push Issue 
         if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
@@ -208,12 +208,29 @@ jobs:
         with:
           task-definition: application/task-definition.json
           container-name: flask-app
-          image: ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE }}
+          image: ${{ env.DOCKER_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:latest
           environment-variables: "LOG_LEVEL=info"
+      - name: Create/Update ECS service 
+        run: |
+          SERVICE_STATUS=$(aws ecs describe-services --services ${{ vars.ECS_SERVICE }} --cluster ${{ vars.ECS_CLUSTER }} | jq -r '.services[].status')
+          if [[ ${SERVICE_STATUS} == "ACTIVE" ]]; then
+            echo "The ${{ vars.ECS_SERVICE }} service is active."
+          else
+            echo "The ${{ vars.ECS_SERVICE }} service is not active."
+            echo "Creating ${{ vars.ECS_SERVICE }} service"
+            aws ecs create-service \
+              --cluster ${{ vars.ECS_CLUSTER }} \
+              --service-name ${{ vars.ECS_SERVICE }} \
+              --task-definition ${{ vars.TD_FAMILY }}:1 \
+              --desired-count ${{ vars.TASK_COUNT }} \
+              --launch-type FARGATE \
+              --platform-version LATEST \
+              --network-configuration "awsvpcConfiguration={subnets=[${{ vars.ECS_SUBNETS }}],securityGroups=[${{ vars.ECS_SG }}],assignPublicIp=DISABLED}"
+          fi       
       - name: Deploy to Amazon ECS service
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.render-app-container.outputs.task-definition }}
-          service: ${{ env.ECS_SERVICE }}
-          cluster: ${{ env.ECS_CLUSTER }}
+          service: ${{ vars.ECS_SERVICE }}
+          cluster: ${{ vars.ECS_CLUSTER }}
           wait-for-service-stability: true
