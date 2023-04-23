@@ -94,7 +94,7 @@ jobs:
           aws s3 sync infrastructure/cloudformation/parameters/ s3://air-cf-templates/aisight/parameters/
   
   Deployment-Approval:
-    name: Infrastructure Deployment Approval 
+    name: Infra Deployment Approval 
     runs-on: ubuntu-latest 
     needs:
       - Publish-CF-Templates
