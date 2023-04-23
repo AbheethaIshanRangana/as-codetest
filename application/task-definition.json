@@ -27,7 +27,6 @@
     "executionRoleArn": "arn:aws:iam::846245987735:role/ecsTaskExecutionRole",
     "family": "flask-ecs-app",
     "memory": "512",
-    "memoryReservation": 400,
     "networkMode": "awsvpc",
     "runtimePlatform": {
          "operatingSystemFamily": "LINUX"
