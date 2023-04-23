@@ -190,7 +190,7 @@ jobs:
           DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: application/task-definition.json
+          task-definition: task-definition.json
           container-name: flask-app
           image: ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
           environment-variables: "LOG_LEVEL=info"
