@@ -72,7 +72,7 @@ jobs:
           aws configure set aws_access_key_id ${{ env.AWS_ACCESS_KEY_ID }} && aws configure set aws_secret_access_key ${{ env.AWS_SECRET_ACCESS_KEY }} && aws configure set default.region ${{ env.AWS_DEFAULT_REGION }}
       - name: Publish CF templates 
         run: |
-          aws s3 sync infrastructure/cloudformation/templates/* s3://air-cf-templates/aisight/
+          aws s3 sync infrastructure/cloudformation/templates/ s3://air-cf-templates/aisight/
 
 
   Deploy-CF-Stack:
@@ -80,6 +80,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - CF-Template-Validation
+      - Publish-CF-Templates
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -95,25 +96,32 @@ jobs:
           aws --version
 
           if aws cloudformation describe-stacks --stack-name "${{ env.STACK_NAME }}" >/dev/null 2>&1; then
+
             echo "Stack ${{ env.STACK_NAME }} exists"
+
             aws cloudformation update-stack \ 
-              --template-file $GITHUB_WORKSPACE/infrastructure/cloudformation/templates/base-resources.yml \
               --stack-name ${{ env.STACK_NAME }} \
+              --template-file https://air-cf-templates.s3.amazonaws.com/aisight/base-resources.yml \
               --parameter-overrides file:///$GITHUB_WORKSPACE/parameters.json \
               --no-execute-changeset --output yaml > $GITHUB_WORKSPACE/stack_events.yml
+
             if [ $? != "0" ]; then
               aws cloudformation describe-stack-events --stack-name "${{ env.STACK_NAME }}" --query 'StackEvents[*]' --output yaml > $GITHUB_WORKSPACE/stack_events.yml
             fi
+
           else 
             echo "Stack ${{ env.STACK_NAME }} does not exists"
+            
             aws cloudformation create-stack \
-              --template $GITHUB_WORKSPACE/infrastructure/cloudformation/templates/base-resources.yml \
               --stack-name ${{ env.STACK_NAME }} \
+              --template https://air-cf-templates.s3.amazonaws.com/aisight/base-resources.yml \
               --parameter-overrides file:///$GITHUB_WORKSPACE/parameters.json \
               --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --output yaml > $GITHUB_WORKSPACE/stack_events.yml
+
             if [ $? != "0" ]; then
               aws cloudformation describe-stack-events --stack-name "${{ env.STACK_NAME }}" --query 'StackEvents[*]' --output yaml > $GITHUB_WORKSPACE/stack_events.yml
             fi
+
           fi 
       - name: Upload CF deploy stack event log 
         uses: actions/upload-artifact@v3
