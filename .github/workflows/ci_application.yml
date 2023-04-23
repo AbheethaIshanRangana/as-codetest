@@ -68,11 +68,13 @@ jobs:
         continue-on-error: true
       - name: Prospector
         run: | 
+          echo "Documentation: https://prospector.landscape.io/en/master/index.html"
           python3 -m pip install prospector
           cd $GITHUB_WORKSPACE/application/ && prospector
         continue-on-error: true
       - name: Bandit 
         run: |
+          echo "Documentation: https://bandit.readthedocs.io/en/latest/"
           python3 -m pip install bandit
           cd $GITHUB_WORKSPACE/application/ && bandit -r .
         continue-on-error: true
@@ -104,6 +106,12 @@ jobs:
         with:
           image: flaskapp:latest
           args: --file=$GITHUB_WORKSPACE/application/Dockerfile
+      - name: Checkov scanning 
+        continue-on-error: true
+        run: |
+          pip install checkov
+          checkov -v 
+          checkov -d $GITHUB_WORKSPACE/application/ --framework dockerfile
 
   Docker-Build-And-Push:
     name: Docker Build And Push
@@ -131,7 +139,7 @@ jobs:
       - name: Build Docker image to deploy
         run: |
           cd $GITHUB_WORKSPACE/application/
-          docker build -t ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.IMAGE_ID }} .
+          docker build -t ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.IMAGE_ID }} . 
       - name: Push Docker image to DockerHub
         run: |
           docker login -u ${{ env.DOCKER_USERNAME }} -p ${{ env.DOCKER_PASSWORD}}

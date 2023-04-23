@@ -23,11 +23,112 @@ on:
           - infrastructure
           - application
 
+env:
+  STACK_NAME: "flaskapp"
+
 jobs:
 
-  build:
-    runs-on: ubuntu-latest
+  CF-Template-Validation:
+    name: CF Template Validation
+    runs-on: ubuntu-latest 
     steps:
-      - name: Open Issue
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: awscli version
         run: |
-          echo "CI Infrastructure"
+          aws --version
+      - name: Specify Python version
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'
+      - name: Checkov scanning 
+        continue-on-error: true
+        run: |
+          echo "Documentation: https://www.checkov.io/1.Welcome/What%20is%20Checkov.html"
+          pip install checkov
+          checkov -v
+          checkov -d $GITHUB_WORKSPACE/infrastructure/cloudformation/templates/ --framework cloudformation
+      - name: Regula scanning 
+        continue-on-error: true
+        run: |
+          echo "Documentation: https://github.com/fugue/regula"
+          wget https://github.com/fugue/regula/releases/download/v3.2.1/regula_3.2.1_Linux_x86_64.tar.gz && \
+            tar -zxvf regula_3.2.1_Linux_x86_64.tar.gz
+          ./regula run $GITHUB_WORKSPACE/infrastructure/cloudformation/templates/*.yml -v
+
+  Publish-CF-Templates:
+    name: Publish CF templates
+    runs-on: ubuntu-latest 
+    needs:
+      - CF-Template-Validation
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Configure AWS credentials
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+        run: | 
+          aws configure set aws_access_key_id ${{ env.AWS_ACCESS_KEY_ID }} && aws configure set aws_secret_access_key ${{ env.AWS_SECRET_ACCESS_KEY }} && aws configure set default.region ${{ env.AWS_DEFAULT_REGION }}
+      - name: Publish CF templates 
+        run: |
+          aws s3 cp $GITHUB_WORKSPACE/infrastructure/cloudformation/templates/* s3://air-cf-templates/aisight/ --recursive --include "*.yml"
+
+
+  Deploy-CF-Stack:
+    name: Deploy CF Stack 
+    runs-on: ubuntu-latest
+    needs:
+      - CF-Template-Validation
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Configure AWS credentials
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+        run: | 
+          aws configure set aws_access_key_id ${{ env.AWS_ACCESS_KEY_ID }} && aws configure set aws_secret_access_key ${{ env.AWS_SECRET_ACCESS_KEY }} && aws configure set default.region ${{ env.AWS_DEFAULT_REGION }}
+      - name: Deploy infrastructure
+        run: |
+          aws --version
+
+          if aws cloudformation describe-stacks --stack-name "${{ env.STACK_NAME }}" >/dev/null 2>&1; then
+            echo "Stack ${{ env.STACK_NAME }} exists"
+            aws cloudformation deploy \ 
+              --template-file $GITHUB_WORKSPACE/infrastructure/cloudformation/templates/base-resources.yml \
+              --stack-name ${{ env.STACK_NAME }} \
+              --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
+              --parameter-overrides file:///$GITHUB_WORKSPACE/parameters.json \
+              --no-execute-changeset --output yaml > stack_events.yml
+            if [ $? != "0" ]; then
+              aws cloudformation describe-stack-events --stack-name "${{ env.STACK_NAME }}" --query 'StackEvents[*]' --output yaml > stack_events.yml
+            fi
+          else 
+            echo "Stack ${{ env.STACK_NAME }} does not exists"
+            aws cloudformation deploy \
+              --template $GITHUB_WORKSPACE/infrastructure/cloudformation/templates/base-resources.yml \
+              --stack-name ${{ env.STACK_NAME }} \
+              --parameter-overrides file:///$GITHUB_WORKSPACE/parameters.json \
+              --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --output yaml > stack_events.yml
+            if [ $? != "0" ]; then
+              aws cloudformation describe-stack-events --stack-name "${{ env.STACK_NAME }}" --query 'StackEvents[*]' --output yaml > stack_events.yml
+            fi
+          fi 
+      - name: Upload CF deploy stack event log 
+        uses: actions/upload-artifact@v3
+        with:
+          name: cf-event-artifact
+          path: $GITHUB_WORKSPACE/stack_events.yml
+      - name: Open Deployment Issue 
+        if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          curl --request POST --url https://api.github.com/repos/${{ github.repository }}/issues \
+          --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' --header 'content-type: application/json' \
+          --data '{
+            "title": "Automated issue for commit: ${{ github.sha }}",
+            "body": "This issue was automatically created by the GIthub Action workflow **${{ github.workflow }}**. \n\n The commit has was: _${{ github.sha }}_.",
+            "assignees": ["${{ github.event.pull_request.user.login }}"]
+          }'
