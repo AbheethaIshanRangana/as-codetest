@@ -231,7 +231,7 @@ jobs:
             aws ecs create-service \
               --cluster ${{ vars.ECS_CLUSTER }} \
               --service-name ${{ vars.ECS_SERVICE }} \
-              --task-definition ${{ vars.TD_FAMILY }}:1 \
+              --task-definition ${{ vars.TD_FAMILY }} \
               --desired-count ${{ vars.TASK_COUNT }} \
               --launch-type FARGATE \
               --platform-version LATEST \
