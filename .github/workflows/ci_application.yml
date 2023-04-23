@@ -68,11 +68,13 @@ jobs:
         continue-on-error: true
       - name: Prospector
         run: | 
+          echo "Documentation: https://prospector.landscape.io/en/master/index.html"
           python3 -m pip install prospector
           cd $GITHUB_WORKSPACE/application/ && prospector
         continue-on-error: true
       - name: Bandit 
         run: |
+          echo "Documentation: https://bandit.readthedocs.io/en/latest/"
           python3 -m pip install bandit
           cd $GITHUB_WORKSPACE/application/ && bandit -r .
         continue-on-error: true
