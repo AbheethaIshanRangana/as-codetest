@@ -28,9 +28,6 @@
     "family": "flask-ecs-app",
     "memory": "512",
     "networkMode": "awsvpc",
-    "runtimePlatform": {
-         "operatingSystemFamily": "LINUX"
-     },
     "requiresCompatibilities": [ 
         "FARGATE" 
      ]
