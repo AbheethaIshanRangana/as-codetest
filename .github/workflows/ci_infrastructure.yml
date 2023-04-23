@@ -73,6 +73,7 @@ jobs:
       - name: Publish CF templates 
         run: |
           aws s3 sync infrastructure/cloudformation/templates/ s3://air-cf-templates/aisight/templates/
+
   Push-Parameter-Json-File:
     name: Push Parameter JSON file 
     runs-on: ubuntu-latest
@@ -91,14 +92,27 @@ jobs:
       - name: Publish CF templates 
         run: |
           aws s3 sync infrastructure/cloudformation/parameters/ s3://air-cf-templates/aisight/parameters/
+  
+  Deployment-Approval:
+    name: Infrastructure Deployment Approval 
+    runs-on: ubuntu-latest 
+    needs:
+      - Publish-CF-Templates
+      - Push-Parameter-Json-File
+    steps:
+      - name: Deployment Approval
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ env.TOKEN }}
+          approvers: AbheethaIshanRangana
+        env:
+          TOKEN: ${{ secrets.GH_TOKEN }}
 
   Deploy-CF-Stack:
     name: Deploy CF Stack 
     runs-on: ubuntu-latest
     needs:
-      - CF-Template-Validation
-      - Publish-CF-Templates
-      - Push-Parameter-Json-File
+      - Deployment-Approval
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -125,11 +139,6 @@ jobs:
               aws cloudformation describe-stack-events --stack-name "${{ env.STACK_NAME }}" --query 'StackEvents[*]' --output yaml
             fi
           fi 
-      #- name: Upload CF deploy stack event log 
-      #  uses: actions/upload-artifact@v3
-      #  with:
-      #    name: cf-event-artifact
-      #    path: $GITHUB_WORKSPACE/stack_events.yml
       - name: Open Deployment Issue 
         if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
