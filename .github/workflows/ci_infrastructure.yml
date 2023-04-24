@@ -13,17 +13,17 @@ on:
       - dev
       - main
   workflow_dispatch:
-    inputs:
-      directory:
-        description: "Set repo directory"
-        required: true
-        default: 'infrastructure'
-        type: choice
-        options:
-          - infrastructure
-          - application
-env:
-  STACK_NAME: "flaskapp"
+    #inputs:
+    #  directory:
+    #    description: "Set repo directory"
+    #    required: true
+    #    default: 'infrastructure'
+    #    type: choice
+    #    options:
+    #      - infrastructure
+    #      - application
+#env:
+#  STACK_NAME: "flaskapp"
 
 jobs:
 
@@ -130,17 +130,17 @@ jobs:
       - name: Deploy infrastructure
         run: |
           aws --version
-          if aws cloudformation describe-stacks --stack-name "${{ env.STACK_NAME }}" >/dev/null 2>&1; then
-            echo "Stack ${{ env.STACK_NAME }} exists"
-            aws cloudformation update-stack --stack-name ${{ env.STACK_NAME }} --template-body file://infrastructure/cloudformation/templates/base-resources.yml --parameters file://infrastructure/cloudformation/parameters/update-parameters.json --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND
+          if aws cloudformation describe-stacks --stack-name "${{ vars.STACK_NAME }}" >/dev/null 2>&1; then
+            echo "Stack ${{ vars.STACK_NAME }} exists"
+            aws cloudformation update-stack --stack-name ${{ vars.STACK_NAME }} --template-body file://infrastructure/cloudformation/templates/base-resources.yml --parameters file://infrastructure/cloudformation/parameters/update-parameters.json --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND
             if [ $? != "0" ]; then
-              aws cloudformation describe-stack-events --stack-name "${{ env.STACK_NAME }}" --query 'StackEvents[*]' --output yaml
+              aws cloudformation describe-stack-events --stack-name "${{ vars.STACK_NAME }}" --query 'StackEvents[*]' --output yaml
             fi
           else 
-            echo "Stack ${{ env.STACK_NAME }} does not exists"
-            aws cloudformation create-stack --stack-name ${{ env.STACK_NAME }} --template-body file://infrastructure/cloudformation/templates/base-resources.yml --parameters file://infrastructure/cloudformation/parameters/create-parameters.json --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND
+            echo "Stack ${{ vars.STACK_NAME }} does not exists"
+            aws cloudformation create-stack --stack-name ${{ vars.STACK_NAME }} --template-body file://infrastructure/cloudformation/templates/base-resources.yml --parameters file://infrastructure/cloudformation/parameters/create-parameters.json --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND
             if [ $? != "0" ]; then
-              aws cloudformation describe-stack-events --stack-name "${{ env.STACK_NAME }}" --query 'StackEvents[*]' --output yaml
+              aws cloudformation describe-stack-events --stack-name "${{ vars.STACK_NAME }}" --query 'StackEvents[*]' --output yaml
             fi
           fi 
       - name: Open Deployment Issue 
