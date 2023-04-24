@@ -13,17 +13,6 @@ on:
       - dev
       - main
   workflow_dispatch:
-    #inputs:
-    #  directory:
-    #    description: "Set repo directory"
-    #    required: true
-    #    default: 'infrastructure'
-    #    type: choice
-    #    options:
-    #      - infrastructure
-    #      - application
-#env:
-#  STACK_NAME: "flaskapp"
 
 jobs:
 
