@@ -13,20 +13,6 @@ on:
       - dev
       - main
   workflow_dispatch:
-    #inputs:
-    #  directory:
-    #    description: "Set repo directory"
-    #    required: true
-    #    default: 'application'
-    #    type: choice
-    #    options:
-    #      - application
-    #      - infrastructure
-
-#env:
-#  DOCKER_IMAGE_NAME: "flaskapp"
-#  ECS_SERVICE: "flask"
-#  ECS_CLUSTER: "flaskecscluster"
 
 jobs:
 
@@ -183,13 +169,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      #- name: Configure AWS credentials
-      #  env:
-      #    AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      #    AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      #    AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-      #  run: | 
-      #    aws configure set aws_access_key_id ${{ env.AWS_ACCESS_KEY_ID }} && aws configure set aws_secret_access_key ${{ env.AWS_SECRET_ACCESS_KEY }} && aws configure set default.region ${{ env.AWS_DEFAULT_REGION }}
       - name: Configure AWS credentials
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
